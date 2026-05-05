@@ -166,6 +166,60 @@ Removes one ingested document by id.
 - Knowledge base is in-memory (resets when server restarts)
 - File parsing is text-focused (binary PDFs/DOCX not yet parsed)
 
+## Troubleshooting
+
+### 1) "Knowledge base is empty" in Chat
+
+Cause:
+- No sources are currently ingested.
+
+Fix:
+1. Open the **Database** tab.
+2. Upload a supported file or add a URL source.
+3. Retry the chat question.
+
+### 2) Groq token/rate limit error (413 / rate-limit exceeded)
+
+Cause:
+- The request context or generation demand exceeded current Groq limits.
+
+Fix:
+1. Ask a shorter question.
+2. Remove very large/irrelevant sources from Database.
+3. Split large sources into smaller focused files.
+4. Retry after a short wait if it is a temporary rate spike.
+
+### 3) "No relevant content found"
+
+Cause:
+- Retrieval could not find enough matching content in ingested sources.
+
+Fix:
+1. Add more domain-relevant documents/URLs.
+2. Rephrase the query using terms present in your sources.
+3. Verify the expected text really exists in the uploaded content.
+
+### 4) Unsupported file type on upload
+
+Cause:
+- Current ingestion is text-oriented.
+
+Supported now:
+- `.txt`, `.md`, `.csv`, `.json`, `.tsv`, `.log`
+
+Fix:
+1. Convert binary docs (PDF/DOCX) to text/markdown first.
+2. Upload the converted file.
+
+### 5) Data disappears after restart
+
+Cause:
+- Knowledge base is currently in-memory only.
+
+Fix:
+1. Re-ingest sources after restart, or
+2. Implement persistent storage (SQLite/Postgres) as next step.
+
 ## Recommended Next Improvements
 
 1. Persistent storage (SQLite/Postgres) for KB documents
