@@ -30,6 +30,19 @@ const leastSubjects = [
 
 const queryVolume = [12, 34, 51, 28, 19, 47, 63, 55, 31];
 const queryLabels = ["9 AM", "10 AM", "11 AM", "12 PM", "1 PM", "2 PM", "3 PM", "4 PM", "5 PM"];
+const triggerWords = [
+  { word: "renewal risk", hits: 39, pct: 100 },
+  { word: "pricing pressure", hits: 31, pct: 79 },
+  { word: "expansion opportunity", hits: 26, pct: 67 },
+  { word: "churn signal", hits: 22, pct: 56 },
+  { word: "discount request", hits: 18, pct: 46 }
+];
+const revenueFocus = [
+  { band: "3500+", clients: 17, share: "38%" },
+  { band: "2500-3499", clients: 26, share: "34%" },
+  { band: "1000-2499", clients: 21, share: "20%" },
+  { band: "<1000", clients: 13, share: "8%" }
+];
 
 export function AnalyticsPanel({ documents, queries, satisfaction }: AnalyticsPanelProps) {
   const totalQueries = queries.length + 340;
@@ -144,6 +157,59 @@ export function AnalyticsPanel({ documents, queries, satisfaction }: AnalyticsPa
             </div>
           </SectionCard>
         </div>
+
+        <SectionCard title="Salesforce Consolidation & Revenue Focus" subtitle="RAG trigger words, client sentiment, and high-value client concentration">
+          <div className="two-column" style={{ gap: 12 }}>
+            <div className="section-card" style={{ border: "1px solid var(--rag-border)", boxShadow: "none" }}>
+              <div className="section-card-header">
+                <p className="section-card-title">RAG Trigger Words</p>
+                <p className="rag-meta" style={{ marginTop: 1 }}>Detected from Salesforce-linked conversation patterns</p>
+              </div>
+              <div className="section-card-body">
+                <div className="bar-list">
+                  {triggerWords.map((item) => (
+                    <BarRow
+                      color="var(--rag-blue)"
+                      key={item.word}
+                      label={item.word}
+                      pct={item.pct}
+                      value={item.hits}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="section-card" style={{ border: "1px solid var(--rag-border)", boxShadow: "none" }}>
+              <div className="section-card-header">
+                <p className="section-card-title">Client Sentiment + True Revenue</p>
+                <p className="rag-meta" style={{ marginTop: 1 }}>Priority on 2500-3500+ revenue clients</p>
+              </div>
+              <div className="section-card-body">
+                <div className="meter-group">
+                  <Meter color="var(--rag-success)" icon="smile" label="Positive sentiment" total={100} value={72} />
+                  <Meter color="var(--rag-warning)" icon="activity" label="Neutral sentiment" total={100} value={20} />
+                  <Meter color="var(--rag-danger)" icon="alert" label="Negative sentiment" total={100} value={8} />
+                </div>
+                <div className="rank-list" style={{ marginTop: 14 }}>
+                  {revenueFocus.map((row, index) => (
+                    <BarRow
+                      color={index < 2 ? "var(--rag-success)" : "rgba(26,58,107,0.35)"}
+                      key={row.band}
+                      label={`$${row.band}`}
+                      pct={Math.max(12, Number.parseInt(row.share, 10))}
+                      value={row.clients}
+                    />
+                  ))}
+                  <div className="insight-note">
+                    <Icon name="trending-up" size={12} style={{ color: "var(--rag-success)" }} />
+                    <span>Top-tier ($2500-3500+) clients represent 72% of tracked revenue-focused accounts</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </SectionCard>
       </div>
     </section>
   );
