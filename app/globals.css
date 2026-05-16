@@ -249,6 +249,23 @@ button {
   z-index: 50;
 }
 
+.collapse-tab {
+  align-items: center;
+  background: var(--rag-primary);
+  border-radius: 0 var(--rag-radius) var(--rag-radius) 0;
+  box-shadow: 2px 0 12px rgba(26, 58, 107, 0.25);
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  display: flex;
+  height: 56px;
+  justify-content: center;
+  left: 64px;
+  position: fixed;
+  top: calc(50% - 28px);
+  width: 20px;
+  z-index: 50;
+}
+
 .main-panel {
   flex: 1;
   min-width: 0;
@@ -1212,6 +1229,11 @@ button {
   .sidebar-divider,
   .sidebar-spacer,
   .sidebar .icon-button {
+    display: none;
+  }
+
+  .collapse-tab,
+  .reopen-tab {
     display: none;
   }
 

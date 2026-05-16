@@ -43,6 +43,11 @@ const revenueFocus = [
   { band: "1000-2499", clients: 21, share: "20%" },
   { band: "<1000", clients: 13, share: "8%" }
 ];
+const costMetrics = {
+  totalTokens: 182340,
+  modelCalls: 468,
+  avgCostPerRequest: 0.018
+};
 
 export function AnalyticsPanel({ documents, queries, satisfaction }: AnalyticsPanelProps) {
   const totalQueries = queries.length + 340;
@@ -208,6 +213,32 @@ export function AnalyticsPanel({ documents, queries, satisfaction }: AnalyticsPa
                 </div>
               </div>
             </div>
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Cost Tracking" subtitle="Token consumption, model calls, and request-level spend">
+          <div className="stat-grid" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
+            <StatCard
+              accent="#1A3A6B"
+              icon="activity"
+              label="Total Tokens"
+              sub="prompt + completion"
+              value={costMetrics.totalTokens.toLocaleString()}
+            />
+            <StatCard
+              accent="#1565C0"
+              icon="bot"
+              label="Model Calls"
+              sub="requests to LLM endpoints"
+              value={costMetrics.modelCalls}
+            />
+            <StatCard
+              accent="#00B050"
+              icon="bar-chart"
+              label="Cost / Request"
+              sub="average estimated spend"
+              value={`$${costMetrics.avgCostPerRequest.toFixed(3)}`}
+            />
           </div>
         </SectionCard>
       </div>

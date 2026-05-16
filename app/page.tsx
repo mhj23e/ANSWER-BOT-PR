@@ -150,13 +150,14 @@ export default function Home() {
             <span className="nav-label">{tab.label}</span>
           </button>
         ))}
-
         <div className="sidebar-spacer" />
-
-        <button className="icon-button" onClick={() => setSidebarOpen(false)} title="Collapse sidebar" type="button">
-          <Icon name="panel-close" size={15} />
-        </button>
       </aside>
+
+      {sidebarOpen ? (
+        <button className="collapse-tab" onClick={() => setSidebarOpen(false)} title="Collapse sidebar" type="button">
+          <Icon name="panel-close" size={12} />
+        </button>
+      ) : null}
 
       {!sidebarOpen ? (
         <button className="reopen-tab" onClick={() => setSidebarOpen(true)} title="Open sidebar" type="button">
