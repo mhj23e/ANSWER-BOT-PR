@@ -4,9 +4,10 @@ Enterprise RAG Assistant built with Next.js and Groq.
 
 This project provides:
 - A chat interface backed by a multi-model RAG pipeline
-- A database tab to ingest knowledge sources (files and URLs)
+- A collapsible sidebar for switching between Chat, Database, and Analytics
+- A database tab to ingest and manage knowledge sources (files and URLs)
 - Retrieval over ingested sources only (no hidden fallback corpus)
-- Analytics and feedback capture in the UI
+- Analytics, feedback capture, and session cost visibility in the UI
 
 ## Quick Demo
 
@@ -30,6 +31,7 @@ This project provides:
 1. Database-backed RAG
 - Upload text-like files (`.txt`, `.md`, `.csv`, `.json`, `.tsv`, `.log`)
 - Add URL sources for text extraction
+- Remove individual sources and monitor sync/indexing state in the Database tab
 - Chat answers use only currently ingested Database content
 
 2. Multi-model pipeline
@@ -42,6 +44,16 @@ This project provides:
 3. Guardrails for limits
 - History/context trimming and token budgeting
 - Friendly error handling for Groq rate/token limit failures
+
+4. Analytics workspace
+- Answer satisfaction tracking from thumbs-up / thumbs-down feedback
+- Query volume and topic engagement views
+- Salesforce consolidation and revenue-focus dashboard cards
+- Token, model-call, and per-request cost tracking
+
+5. Session-first app shell
+- Collapsible left navigation with Chat, Database, and Analytics tabs
+- Live knowledge-base counts and document inventory in the Database workspace
 
 ## Project Structure
 
@@ -90,10 +102,18 @@ http://127.0.0.1:3000
 ## How to Use
 
 1. Go to **Database** tab
-2. Add one or more files/URLs
-3. Go to **Chat** tab
-4. Ask questions grounded in uploaded sources
-5. Review cited source chips in responses
+2. Add one or more supported files or URL sources
+3. Wait for indexing to finish, then confirm the document list updates
+4. Go to **Chat** tab and ask questions grounded in the uploaded sources
+5. Review cited source chips in responses and rate answers with thumbs up/down
+6. Open **Analytics** to review usage, topic trends, revenue-focus insights, and estimated cost metrics
+
+## UI Highlights
+
+- **Chat**: grounded responses, source citations, and answer feedback capture
+- **Database**: drag-and-drop file upload, URL ingestion, per-document removal, and live session stats
+- **Analytics**: satisfaction donut, hourly query volume, top/low-search subjects, Salesforce trigger words, revenue-band focus, and cost tracking
+- **Navigation**: the left sidebar can be collapsed and reopened using the floating edge control
 
 ## API Routes
 
@@ -164,7 +184,8 @@ Removes one ingested document by id.
 ## Current Limits
 
 - Knowledge base is in-memory (resets when server restarts)
-- File parsing is text-focused (binary PDFs/DOCX not yet parsed)
+- File parsing is still text-focused; the current backend supports `.txt`, `.md`, `.csv`, `.json`, `.tsv`, and `.log`
+- Binary document formats such as PDF and DOCX are not yet parsed into retrievable text
 
 ## Troubleshooting
 
