@@ -2,21 +2,100 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "./Icons";
-import type { ChatMessage } from "./types";
+import type { ChatMessage, SessionUser } from "./types";
 
 interface ChatPanelProps {
   hasDocuments: boolean;
+  isLoggedIn: boolean;
+  sessionUser: SessionUser | null;
   onQuery: (query: string) => void;
   onSatisfactionChange: (up: number, down: number) => void;
 }
 
-export function ChatPanel({ hasDocuments, onQuery, onSatisfactionChange }: ChatPanelProps) {
+const CHAT_SESSION_STORAGE_PREFIX = "rag-bot-chat-session";
+
+interface StoredChatMessage {
+  id: string;
+  role: ChatMessage["role"];
+  content: string;
+  timestamp: string;
+  sources?: string[];
+  rating?: ChatMessage["rating"];
+}
+
+function toStoredMessages(messages: ChatMessage[]): StoredChatMessage[] {
+  return messages.map((message) => ({
+    id: message.id,
+    role: message.role,
+    content: message.content,
+    timestamp: message.timestamp.toISOString(),
+    sources: message.sources,
+    rating: message.rating
+  }));
+}
+
+function fromStoredMessages(messages: StoredChatMessage[]): ChatMessage[] {
+  return messages.map((message) => ({
+    ...message,
+    timestamp: new Date(message.timestamp)
+  }));
+}
+
+export function ChatPanel({
+  hasDocuments,
+  isLoggedIn,
+  sessionUser,
+  onQuery,
+  onSatisfactionChange
+}: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [requestError, setRequestError] = useState<string | null>(null);
+  const [hasLoadedStoredMessages, setHasLoadedStoredMessages] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const storageKey = sessionUser?.email ? `${CHAT_SESSION_STORAGE_PREFIX}:${sessionUser.email}` : null;
+
+  useEffect(() => {
+    if (!isLoggedIn || !storageKey) {
+      setMessages([]);
+      setInput("");
+      setRequestError(null);
+      setHasLoadedStoredMessages(false);
+      return;
+    }
+
+    const storedMessages = window.sessionStorage.getItem(storageKey);
+    if (!storedMessages) {
+      setMessages([]);
+      setHasLoadedStoredMessages(true);
+      return;
+    }
+
+    try {
+      const parsedMessages = JSON.parse(storedMessages) as StoredChatMessage[];
+      setMessages(fromStoredMessages(parsedMessages));
+    } catch {
+      window.sessionStorage.removeItem(storageKey);
+      setMessages([]);
+    } finally {
+      setHasLoadedStoredMessages(true);
+    }
+  }, [isLoggedIn, storageKey]);
+
+  useEffect(() => {
+    if (!storageKey) return;
+
+    if (!isLoggedIn) {
+      window.sessionStorage.removeItem(storageKey);
+      return;
+    }
+
+    if (!hasLoadedStoredMessages) return;
+
+    window.sessionStorage.setItem(storageKey, JSON.stringify(toStoredMessages(messages)));
+  }, [hasLoadedStoredMessages, isLoggedIn, messages, storageKey]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -119,7 +198,7 @@ export function ChatPanel({ hasDocuments, onQuery, onSatisfactionChange }: ChatP
         <div>
           <h1 className="rag-h1">Enterprise RAG Assistant</h1>
           <p className="rag-h5" style={{ color: "rgba(26,58,107,0.5)", marginTop: 1 }}>
-            Ephemeral session - data is not persisted after closing
+            {isLoggedIn ? "Chat history is saved for your current sign-in session" : "Sign in to keep chat history during your session"}
           </p>
         </div>
         <div className="status-pill">

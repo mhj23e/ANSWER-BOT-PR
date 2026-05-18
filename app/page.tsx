@@ -20,6 +20,9 @@ const mockUser: SessionUser = {
   role: "Enterprise Admin"
 };
 
+const AUTH_SESSION_STORAGE_KEY = "rag-bot-auth-session";
+const CHAT_SESSION_STORAGE_PREFIX = "rag-bot-chat-session";
+
 export default function Home() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("chat");
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
@@ -29,6 +32,34 @@ export default function Home() {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isKnowledgeSyncing, setIsKnowledgeSyncing] = useState(false);
+
+  useEffect(() => {
+    const storedSession = window.sessionStorage.getItem(AUTH_SESSION_STORAGE_KEY);
+    if (!storedSession) return;
+
+    try {
+      const parsedSession = JSON.parse(storedSession) as { user?: SessionUser | null };
+      if (!parsedSession.user) return;
+      setIsLoggedIn(true);
+      setUser(parsedSession.user);
+    } catch {
+      window.sessionStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isLoggedIn || !user) {
+      window.sessionStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
+      return;
+    }
+
+    window.sessionStorage.setItem(
+      AUTH_SESSION_STORAGE_KEY,
+      JSON.stringify({
+        user
+      })
+    );
+  }, [isLoggedIn, user]);
 
   useEffect(() => {
     void (async () => {
@@ -129,6 +160,10 @@ export default function Home() {
             setUser(mockUser);
           }}
           onLogout={() => {
+            if (user?.email) {
+              window.sessionStorage.removeItem(`${CHAT_SESSION_STORAGE_PREFIX}:${user.email}`);
+            }
+            window.sessionStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
             setIsLoggedIn(false);
             setUser(null);
           }}
@@ -169,6 +204,8 @@ export default function Home() {
         {activeTab === "chat" ? (
           <ChatPanel
             hasDocuments={documents.length > 0}
+            isLoggedIn={isLoggedIn}
+            sessionUser={user}
             onQuery={(query) => setQueries((previous) => [...previous, query])}
             onSatisfactionChange={handleSatisfactionChange}
           />
