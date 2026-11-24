@@ -1,5 +1,7 @@
 # ANSWER-BOT-PR
 
+[![Tests](https://github.com/mhj23e/ANSWER-BOT-PR/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/mhj23e/ANSWER-BOT-PR/actions/workflows/tests.yml)
+
 Enterprise RAG Assistant built with Next.js and Groq.
 
 This project provides:
@@ -76,7 +78,7 @@ lib/
 
 - Node.js `>=20.9.0`
 - npm
-- Groq API key
+- A Groq API key for hosted inference, or Ollama for local inference
 
 ## Environment
 
@@ -98,6 +100,35 @@ Open:
 ```text
 http://127.0.0.1:3000
 ```
+
+## Run locally with Ollama
+
+Each coworker can run their own copy on an approved machine and use its CPU
+or GPU for inference. This requires no provider account or per-query API
+fees. Use synthetic files for the public portfolio demo.
+
+1. Install and start [Ollama](https://ollama.com/).
+2. Run `ollama pull gemma3:4b`.
+3. Set these values in `.env.local`:
+
+   ```env
+   LLM_PROVIDER=ollama
+   OLLAMA_MODEL=gemma3:4b
+   ```
+
+4. Run `npm ci`, then `npm run dev -- --hostname 127.0.0.1`.
+5. Open `http://127.0.0.1:3000`, upload a text file, and ask a question.
+
+Ollama listens on loopback and uses the configured model for grading and
+generation. Hardware affects speed. A team-wide browser URL would require
+an employer-managed machine and access controls. The current server shares
+its in-memory knowledge base across all clients connected to that instance.
+Use company data only with employer approval.
+
+## Tests
+
+Run `npm test` and `npm run typecheck`. See [TEST_PLAN.md](TEST_PLAN.md)
+for coverage and the manual Ollama check.
 
 ## How to Use
 

@@ -248,3 +248,10 @@ export function chooseGenerationModel(query: string): string {
     normalized.length > 140 || complexSignals.some((signal) => normalized.includes(signal));
   return isComplex ? "llama-3.3-70b-versatile" : "llama-3.1-8b-instant";
 }
+
+// The ellipsis counts toward the character budget.
+export function trimText(input: string, maxChars: number): string {
+  if (input.length <= maxChars) return input;
+  if (maxChars <= 3) return input.slice(0, Math.max(0, maxChars));
+  return `${input.slice(0, maxChars - 3)}...`;
+}

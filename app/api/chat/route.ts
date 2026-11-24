@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   buildContextPrompt,
   chooseGenerationModel,
+  trimText,
   formatReferences,
   retrieveRelevantChunks
 } from "@/lib/rag";
@@ -27,33 +28,26 @@ const MAX_HISTORY_CHARS_PER_MESSAGE = 600;
 const MAX_CONTEXT_CHARS = 5000;
 const MAX_COMPLETION_TOKENS = 550;
 
-function getApiKey(): string | null {
-  return process.env.GROQ_API_KEY || null;
-}
-
-function trimText(input: string, maxChars: number): string {
-  if (input.length <= maxChars) return input;
-  return `${input.slice(0, maxChars)}...`;
-}
-
-async function callGroq(
-  apiKey: string,
+async function callModel(
   model: string,
   messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
   temperature: number
 ): Promise<string> {
-  const response = await fetch(GROQ_ENDPOINT, {
+  const local = process.env.LLM_PROVIDER === "ollama";
+  const apiKey = process.env.GROQ_API_KEY;
+  const actualModel = local ? (process.env.OLLAMA_MODEL || "gemma3:4b") : model;
+  const response = await fetch(local ? "http://127.0.0.1:11434/v1/chat/completions" : GROQ_ENDPOINT, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`
+      ...(!local && { Authorization: `Bearer ${apiKey}` })
     },
     body: JSON.stringify({
-      model,
+      model: actualModel,
       messages,
       temperature,
       // Hard cap to reduce runaway responses and stay inside org limits.
-      max_completion_tokens: MAX_COMPLETION_TOKENS
+      ...(local ? { max_tokens: MAX_COMPLETION_TOKENS } : { max_completion_tokens: MAX_COMPLETION_TOKENS })
     }),
     cache: "no-store"
   });
@@ -66,19 +60,18 @@ async function callGroq(
         "Request exceeded model token/rate limits. Try a shorter question or reduce loaded document size."
       );
     }
-    throw new Error(`Groq API error (${response.status}): ${text}`);
+    throw new Error(`Model API error (${response.status}): ${text}`);
   }
 
   const json = (await response.json()) as GroqResponse;
   const content = json.choices?.[0]?.message?.content?.trim();
   if (!content) {
-    throw new Error("Groq returned an empty response.");
+    throw new Error("The model returned an empty response.");
   }
   return content;
 }
 
 async function filterChunksWithModel(
-  apiKey: string,
   query: string,
   chunks: ReturnType<typeof retrieveRelevantChunks>
 ) {
@@ -103,8 +96,7 @@ async function filterChunksWithModel(
     "- Never include explanations or markdown."
   ].join("\n");
 
-  const graderOutput = await callGroq(
-    apiKey,
+  const graderOutput = await callModel(
     RETRIEVAL_MODEL,
     [
       { role: "system", content: graderPrompt },
@@ -131,8 +123,8 @@ async function filterChunksWithModel(
 
 export async function POST(request: Request) {
   try {
-    const apiKey = getApiKey();
-    if (!apiKey) {
+    const local = process.env.LLM_PROVIDER === "ollama";
+    if (!local && !process.env.GROQ_API_KEY) {
       return NextResponse.json(
         {
           error:
@@ -167,7 +159,7 @@ export async function POST(request: Request) {
 
     const initial = retrieveRelevantChunks(query, 8, retrievalSources);
     // Stage 1: lexical+semantic retrieval, Stage 2: LLM relevance grading.
-    const filtered = await filterChunksWithModel(apiKey, query, initial);
+    const filtered = await filterChunksWithModel(query, initial);
     const finalChunks = filtered.slice(0, 4);
     if (!finalChunks.length) {
       return NextResponse.json(
@@ -212,11 +204,11 @@ export async function POST(request: Request) {
       content: `Question:\n${query}\n\nContext:\n${contextBlock}`
     });
 
-    const answer = await callGroq(apiKey, generationModel, messages, 0.2);
+    const answer = await callModel(generationModel, messages, 0.2);
 
     return NextResponse.json({
       answer,
-      model: generationModel,
+      model: local ? (process.env.OLLAMA_MODEL || "gemma3:4b") : generationModel,
       references
     });
   } catch (error) {
